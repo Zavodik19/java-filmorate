@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Film {
-    private Long filmId;
+    private Long id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
     private String name;

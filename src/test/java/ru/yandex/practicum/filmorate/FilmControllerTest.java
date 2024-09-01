@@ -27,7 +27,7 @@ class FilmControllerTest {
                 LocalDate.of(2022, 1, 1), 120);
         Film addedFilm = filmController.addFilm(film);
 
-        assertNotNull(addedFilm.getFilmId());
+        assertNotNull(addedFilm.getId());
         assertEquals("Название фильма", addedFilm.getName());
     }
 

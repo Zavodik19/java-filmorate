@@ -22,8 +22,8 @@ public class FilmController {
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
         validateFilm(film);
-        film.setFilmId(currentId++);
-        films.put(film.getFilmId(), film);
+        film.setId(currentId++);
+        films.put(film.getId(), film);
         log.info("Добавлен фильм: {}", film);
         return film;
     }
@@ -39,10 +39,10 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film newFilm) {
         validateFilm(newFilm);
-        if (!films.containsKey(newFilm.getFilmId())) {
+        if (!films.containsKey(newFilm.getId())) {
             throw new ValidationException("Фильм с таким ID не найден");
         }
-        films.put(newFilm.getFilmId(), newFilm);
+        films.put(newFilm.getId(), newFilm);
         log.info("Фильм обновлен: {}", newFilm);
         return newFilm;
     }
