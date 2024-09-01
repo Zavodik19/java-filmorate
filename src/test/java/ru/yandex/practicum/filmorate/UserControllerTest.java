@@ -23,7 +23,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка на валидность данных добавляемого пользователя")
     void addUserShouldAddUserWhenValidUser() {
-        User user = new User(0, "test@example.com", "testLogin", "testUser",
+        User user = new User(0L, "test@example.com", "testLogin", "testUser",
                 LocalDate.of(2000, 1, 1));
         User addedUser = userController.addUser(user);
 
@@ -34,7 +34,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка на добавление пользователя с некорректным email")
     void addUserShouldThrowExceptionWhenEmailIsInvalid() {
-        User user = new User(0, "invalidEmail", "testLogin", "testUser",
+        User user = new User(0L, "invalidEmail", "testLogin", "testUser",
                 LocalDate.of(2000, 1, 1));
 
         ValidationException exception = assertThrows(ValidationException.class,
@@ -46,7 +46,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка на корректное обновление пользователя")
     void updateUserShouldUpdateUserWhenValidUser() {
-        User user = new User(0, "test@example.com", "testLogin", "testUser",
+        User user = new User(0L, "test@example.com", "testLogin", "testUser",
                 LocalDate.of(2000, 1, 1));
         User addedUser = userController.addUser(user);
         addedUser.setName("Пользователь обновлен");
@@ -70,9 +70,9 @@ class UserControllerTest {
     @Test
     @DisplayName("Проверка на корректное хранение и возвращение всех пользователей")
     void allUsersShouldReturnAllUsers() {
-        userController.addUser(new User(0, "user1@example.com", "user1", "User One",
+        userController.addUser(new User(0L, "user1@example.com", "user1", "User One",
                 LocalDate.of(1999, 2, 1)));
-        userController.addUser(new User(0, "user2@example.com", "user2", "User Two",
+        userController.addUser(new User(0L, "user2@example.com", "user2", "User Two",
                 LocalDate.of(2000, 4, 2)));
 
         assertEquals(2, userController.allUsers().size());
