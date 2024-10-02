@@ -34,7 +34,6 @@ public class UserController {
     }
 
     private boolean isValidEmail(String email) {
-        // Логика проверки email
         return email != null && email.contains("@");
     }
 
