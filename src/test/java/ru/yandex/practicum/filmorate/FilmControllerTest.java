@@ -27,20 +27,22 @@ class FilmControllerTest {
     }
 
     @Test
-    @DisplayName("Проверка на создание фильма с валидными данными")
+    @DisplayName("Проверка на добавление фильма с валидными данными")
     void addFilmShouldAddFilmWhenValidFilm() {
         Film film = new Film(null, "Название фильма", "Описание",
                 LocalDate.of(2022, 1, 1), 120);
-        when(filmService.addFilm(film)).thenReturn(film);
+
+        when(filmService.addFilm(film)).thenReturn(new Film(1L, "Название фильма", "Описание",
+                LocalDate.of(2022, 1, 1), 120));
 
         Film addedFilm = filmController.addFilm(film).getBody();
 
-        assertNotNull(addedFilm.getId());
+        assertNotNull(addedFilm);
         assertEquals("Название фильма", addedFilm.getName());
     }
 
     @Test
-    @DisplayName("Проверка на создание фильма с пустым названием")
+    @DisplayName("Проверка на добавление фильма с пустым названием")
     void addFilmShouldThrowExceptionWhenFilmNameIsEmpty() {
         Film film = new Film(null, "", "Описание",
                 LocalDate.of(2022, 1, 1), 120);
@@ -61,6 +63,30 @@ class FilmControllerTest {
         Film updatedFilm = filmController.updateFilm(film).getBody();
 
         assertEquals("Название фильма", updatedFilm.getName());
+    }
+
+    @Test
+    @DisplayName("Проверка получения фильма по ID")
+    void getFilmByIdShouldReturnFilmWhenFilmExists() {
+        Film film = new Film(1L, "Название фильма", "Описание",
+                LocalDate.of(2022, 1, 1), 120);
+
+        when(filmService.getFilmById(1L)).thenReturn(film);
+
+        Film foundFilm = filmController.getFilm(1L).getBody();
+
+        assertNotNull(foundFilm);
+        assertEquals("Название фильма", foundFilm.getName());
+    }
+
+    @Test
+    @DisplayName("Проверка получения фильма по несуществующему ID")
+    void getFilmByIdShouldThrowExceptionWhenFilmNotFound() {
+        when(filmService.getFilmById(999L)).thenThrow(new ValidationException("Фильм с таким ID не найден"));
+
+        ValidationException exception = assertThrows(ValidationException.class,
+                () -> filmController.getFilm(999L));
+        assertEquals("Фильм с таким ID не найден", exception.getMessage());
     }
 
     @Test
@@ -88,4 +114,18 @@ class FilmControllerTest {
 
         assertEquals(2, films.size());
     }
+
+    @Test
+    @DisplayName("Проверка получения популярных фильмов с пустым списком")
+    void allFilmsShouldReturnEmptyListWhenNoFilms() {
+        when(filmService.getTopFilms(10)).thenReturn(List.of());
+
+        List<Film> films = filmController.getPopularFilms(10).getBody();
+
+        assertNotNull(films);
+        assertTrue(films.isEmpty());
+    }
+
+
+
 }

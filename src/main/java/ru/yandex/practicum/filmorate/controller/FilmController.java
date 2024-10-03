@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -22,10 +23,13 @@ public class FilmController {
         this.filmService = filmService;
     }
 
-    @PostMapping
-    public ResponseEntity<Film> addFilm(@Valid @RequestBody Film film) {
-        log.info("Добавление фильма: {}", film);
-        return ResponseEntity.status(HttpStatus.CREATED).body(filmService.addFilm(film));
+    @PostMapping("/films")
+    public ResponseEntity<Film> addFilm(@RequestBody Film film) {
+        if (film.getName() == null || film.getName().isEmpty()) {
+            throw new ValidationException("Название фильма не может быть пустым.");
+        }
+        Film savedFilm = filmService.addFilm(film);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedFilm);
     }
 
     @PutMapping
