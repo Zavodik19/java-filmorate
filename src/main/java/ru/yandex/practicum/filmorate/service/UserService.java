@@ -70,12 +70,15 @@ public class UserService {
             User user = userOpt.get();
             User friend = friendOpt.get();
             Set<Integer> userFriends = user.getFriends();
-            userFriends.remove(friendId);
             Set<Integer> friendFriends = friend.getFriends();
+
+            userFriends.remove(friendId);
             friendFriends.remove(userId);
+
             return user;
+        }   else {
+            throw new NotFoundException("Пользователь не найден");
         }
-        else throw new NotFoundException("Пользователь не найден");
     }
 
     public List<User> getFriends(int userId) {
