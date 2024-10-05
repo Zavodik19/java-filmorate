@@ -4,14 +4,15 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class Film {
-    private Long id;
+    private Integer id;
 
     @NotEmpty(message = "Название фильма не может быть пустым.")
     private String name;
@@ -20,9 +21,12 @@ public class Film {
     private String description;
 
     @NotNull(message = "Дата релиза не может быть пустой")
-    @FutureOrPresent(message = "Дата релиза не может быть в прошлом")
+    @PastOrPresent(message = "Дата релиза не может быть в будущем")
     private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private long duration;
+
+    Set<Integer> likes = new HashSet<>();
+
 }

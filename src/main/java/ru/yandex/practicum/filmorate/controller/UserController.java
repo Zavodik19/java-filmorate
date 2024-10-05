@@ -1,72 +1,73 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
+
     private final UserService userService;
 
-    @Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
     @PostMapping
-    public ResponseEntity<User> addUser(@Valid @RequestBody User user) {
-        if (!isValidEmail(user.getEmail())) {
-            throw new ValidationException("Электронная почта не может быть пустой и должна содержать символ @.");
-        }
-        User addedUser = userService.addUser(user);
-        return ResponseEntity.ok(addedUser);
-    }
-
-    private boolean isValidEmail(String email) {
-        return email != null && email.contains("@");
+    public User addUser(@Valid @RequestBody User user) {
+        log.info("Создание пользователя: {}", user);
+        return userService.addUser(user);
     }
 
     @PutMapping
-    public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
+    public User updateUser(@Valid @RequestBody User user) {
         log.info("Обновление пользователя: {}", user);
-        return ResponseEntity.ok(userService.updateUser(user));
+        return userService.updateUser(user);
+    }
+
+    @GetMapping
+    public Collection<User> getAllUsers() {
+        log.info("Получение всех пользователей");
+        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<User> getUserById(@PathVariable int id) {
+        log.info("Получение пользователя с ID: {}", id);
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> {
+                    log.warn("Пользователь с ID {} не найден", id);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                });
     }
 
-    @PutMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<Void> addFriend(@PathVariable Long id, @PathVariable Long friendId) {
-        userService.addFriend(id, friendId);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    @PutMapping("/{userId}/friends/{friendId}")
+    public User addFriend(@PathVariable int userId, @PathVariable int friendId) {
+        log.info("Добавление друга с ID: {} для пользователя с ID: {}", friendId, userId);
+        return userService.addFriend(userId, friendId);
     }
 
-    @DeleteMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<Void> removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
-        userService.removeFriend(id, friendId);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    public void removeFriend(@PathVariable int userId, @PathVariable int friendId) {
+        log.info("Удаление друга: пользователь {} удаляет друга {}", userId, friendId);
+        userService.removeFriend(userId, friendId);
     }
 
-    @GetMapping("/{id}/friends")
-    public ResponseEntity<List<User>> getFriends(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getFriends(id));
+    @GetMapping("/{userId}/friends")
+    public List<User> getFriends(@PathVariable int userId) {
+        return userService.getFriends(userId);
     }
 
-    @GetMapping("/{id}/friends/common/{otherId}")
-    public ResponseEntity<Set<Long>> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
-        return ResponseEntity.ok(userService.getCommonFriends(id, otherId));
+    @GetMapping("/{userId}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable int userId, @PathVariable int otherId) {
+        return userService.getCommonFriends(userId, otherId);
     }
 }

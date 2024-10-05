@@ -13,14 +13,14 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
-    private Long id;
+    private Integer id;
 
     @Email(message = "Введите корректный email")
     @NotBlank(message = "Email не может быть пустым")
     private String email;
 
     @NotBlank(message = "Логин не может быть пустым")
-    @Pattern(regexp = "\\S+", message = "Логин не может содержать пробелы.")
+    @Pattern(regexp = "^[^\\s]+$", message = "Логин не может содержать пробелы")
     private String login;
 
     private String name;
@@ -29,5 +29,5 @@ public class User {
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
-    private Set<Long> friends = new HashSet<>();
+    private Set<Integer> friends = new HashSet<>();
 }

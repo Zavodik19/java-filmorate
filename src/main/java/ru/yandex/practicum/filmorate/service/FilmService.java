@@ -1,66 +1,81 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
-
-    @Autowired
-    public FilmService(FilmStorage filmStorage) {
-        this.filmStorage = filmStorage;
-    }
+    private final UserStorage userStorage;
 
     public Film addFilm(Film film) {
+        isValidReleaseDate(film);
         return filmStorage.addFilm(film);
     }
 
     public Film updateFilm(Film film) {
+        if (!filmStorage.getFilmById(film.getId()).isPresent()) {
+            throw new NotFoundException("Фильм с id " + film.getId() + " не найден");
+        }
+        isValidReleaseDate(film);
         return filmStorage.updateFilm(film);
     }
 
-    public Film getFilmById(Long id) {
-        Film film = filmStorage.getFilmById(id);
-        if (film == null) {
-            throw new ValidationException("Фильм не найден.");
-        }
-        return film;
+    public Collection<Film> getAllFilms() {
+        return filmStorage.getAllFilms();
     }
 
-    public void addLike(Long filmId, Long userId) {
-        Film film = filmStorage.getFilmById(filmId);
-        if (film == null) {
-            throw new ValidationException("Фильм не найден.");
-        }
-        filmLikes.putIfAbsent(filmId, new HashSet<>());
-        if (!filmLikes.get(filmId).add(userId)) {
-            throw new ValidationException("Пользователь уже поставил лайк этому фильму.");
-        }
+    public Optional<Film> getFilmById(int id) {
+        return filmStorage.getFilmById(id);
     }
 
-    public void removeLike(Long filmId, Long userId) {
-        Set<Long> likes = filmLikes.get(filmId);
-        if (likes == null || !likes.remove(userId)) {
-            throw new ValidationException("Лайк не найден.");
-        }
+    public void addLike(int filmId, int userId) {
+        Film film = getFilmById(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id " + filmId + " не найден"));
+
+        User user = userStorage.getUserById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
+        film.getLikes().add(userId);
+        filmStorage.updateFilm(film);
     }
 
+    public void removeLike(int filmId, int userId) {
+        Film film = getFilmById(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id " + filmId + " не найден"));
+
+        User user = userStorage.getUserById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
+
+        if (!film.getLikes().contains(userId)) {
+            throw new NotFoundException("Пользователь с id " + userId + " не лайкал фильм с id " + filmId);
+        }
+
+        film.getLikes().remove(Integer.valueOf(userId));
+        filmStorage.updateFilm(film);
+    }
 
     public List<Film> getTopFilms(int count) {
-        List<Map.Entry<Long, Set<Long>>> entries = new ArrayList<>(filmLikes.entrySet());
-        entries.sort((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()));
-
-        List<Film> topFilms = new ArrayList<>();
-        for (int i = 0; i < Math.min(count, entries.size()); i++) {
-            topFilms.add(filmStorage.getFilmById(entries.get(i).getKey()));
-        }
-        return topFilms;
+        return filmStorage.getAllFilms().stream()
+                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
+                .limit(count)
+                .collect(Collectors.toList());
     }
+
+    private void isValidReleaseDate(Film film) {
+        if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            throw new IllegalArgumentException("Дата выхода фильма должна быть позже 28 декабря 1895 года");
+        }
+    }
+
 }
