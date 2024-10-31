@@ -14,6 +14,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class FilmDbStorage implements FilmStorage {
@@ -53,25 +54,30 @@ public class FilmDbStorage implements FilmStorage {
         // Получение ID созданного фильма
         film.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
 
-        // Добавление связей жанров
-        for (Genre genre : film.getGenres()) {
-            jdbcTemplate.update(genreSql, film.getId(), genre.getId());
-        }
+        // Запросы внутри цикла заменены на конструкцию batchUpdate
+        List<Object[]> batchArgs = film.getGenres().stream()
+                .map(genre -> new Object[]{film.getId(), genre.getId()})
+                .collect(Collectors.toList());
+
+        jdbcTemplate.batchUpdate(genreSql, batchArgs);
 
         return film;
     }
 
-    private boolean genreExists(Integer genreId) {
-        String sql = "SELECT COUNT(*) FROM genres WHERE genre_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, new Object[]{genreId}, Integer.class);
-        return count != null && count > 0;
-    }
-
     private void validateGenres(Set<Genre> genres) {
-        for (Genre genre : genres) {
-            if (!genreExists(genre.getId())) {
-                throw new IllegalArgumentException("Жанр с ID " + genre.getId() + " не существует.");
-            }
+        if (genres.isEmpty()) return;
+
+        List<Integer> genreIds = genres.stream().map(Genre::getId).collect(Collectors.toList());
+        String sql = "SELECT genre_id FROM genres WHERE genre_id IN (" +
+                genreIds.stream().map(id -> "?").collect(Collectors.joining(", ")) + ")";
+
+        // Избавились от множественных запросов в цикле
+        Set<Integer> missingGenres = genreIds.stream()
+                .filter(id -> !jdbcTemplate.queryForList(sql, genreIds.toArray(), Integer.class).contains(id))
+                .collect(Collectors.toSet());
+
+        if (!missingGenres.isEmpty()) {
+            throw new IllegalArgumentException("Отсутствующие жанры: " + missingGenres);
         }
     }
 
