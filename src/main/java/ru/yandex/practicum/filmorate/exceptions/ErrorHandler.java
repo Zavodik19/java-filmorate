@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.exceptions;
 
-import org.slf4j.Logger; // Добавлено логирование
-import org.slf4j.LoggerFactory; // Добавлено логирование
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class ErrorHandler { // Класс перенесен из пакета controller в exceptions
+public class ErrorHandler {
     private static final Logger logger = LoggerFactory.getLogger(ErrorHandler.class);
 
     @ExceptionHandler
@@ -39,4 +39,12 @@ public class ErrorHandler { // Класс перенесен из пакета c
         logger.error("Сервер не смог обработать запрос: {}", e.getMessage(), e);
         return new ErrorResponse("Cервер не смог обработать запрос", e.getMessage());
     }
+
+    @ExceptionHandler(GenreNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND) // 404
+    public ErrorResponse handleGenreNotFound(final GenreNotFoundException e) {
+        logger.warn("Жанр не найден: {}", e.getMessage());
+        return new ErrorResponse("Жанр не найден", e.getMessage());
+    }
+
 }
