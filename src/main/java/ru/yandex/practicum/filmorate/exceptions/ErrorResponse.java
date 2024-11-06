@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ErrorResponse {  // Класс перенесен из пакета controller в exceptions
+public class ErrorResponse {
     private String error;
     private String message;
 }

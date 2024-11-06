@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.MpaStorage;
+import ru.yandex.practicum.filmorate.storage.GenreStorage;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -17,6 +19,9 @@ import java.util.stream.Collectors;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
+
 
     public Film addFilm(Film film) {
         isValidReleaseDate(film);
@@ -35,41 +40,43 @@ public class FilmService {
         return filmStorage.getAllFilms();
     }
 
-    public Optional<Film> getFilmById(int id) {
-        return filmStorage.getFilmById(id);
-    }
+    public Film getFilmById(Integer id) {
+        Film film = filmStorage.getFilmById(id)
+                .orElseThrow(() -> new NotFoundException("Фильм с id " + id + " не найден"));
+        film.setMpa(mpaStorage.getMpaById(film.getMpaId())
+                .orElseThrow(() -> new NotFoundException("MPA с id " + film.getMpaId() + " не найден")));
 
-    public void addLike(int filmId, int userId) {
-        Film film = getFilmById(filmId)
-                .orElseThrow(() -> new NotFoundException("Фильм с id " + filmId + " не найден"));
-
-        User user = userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-
-        film.getLikes().add(userId);
-        filmStorage.updateFilm(film);
-    }
-
-    public void removeLike(int filmId, int userId) {
-        Film film = getFilmById(filmId)
-                .orElseThrow(() -> new NotFoundException("Фильм с id " + filmId + " не найден"));
-
-        User user = userStorage.getUserById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-
-        if (!film.getLikes().contains(userId)) {
-            throw new NotFoundException("Пользователь с id " + userId + " не лайкал фильм с id " + filmId);
+        Set<Genre> filmGenres = new HashSet<>();
+        for (Integer genreId : film.getGenres().stream().map(Genre::getId).collect(Collectors.toSet())) {
+            Genre foundGenre = genreStorage.getGenreById(genreId);
+            if (foundGenre != null) {
+                filmGenres.add(foundGenre);
+            }
         }
+        film.setGenres(filmGenres);
+        return film;
+    }
 
-        film.getLikes().remove(Integer.valueOf(userId));
-        filmStorage.updateFilm(film);
+    public Film addLike(Integer filmId, Integer userId) {
+        userStorage.getUserById(userId);
+        Film film = getFilmById(filmId);
+        filmStorage.addLike(filmId, userId);
+        return film;
+    }
+
+    public Film removeLike(Integer filmId, Integer userId) {
+        userStorage.getUserById(userId);
+        Film film = getFilmById(filmId);
+        filmStorage.removeLike(filmId, userId);
+        return film;
     }
 
     public List<Film> getTopFilms(int count) {
-        return filmStorage.getAllFilms().stream()
-                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
-                .limit(count)
-                .collect(Collectors.toList());
+        if (count < 1) {
+            throw new IllegalArgumentException("Количество фильмов должно быть больше нуля.");
+        }
+
+        return filmStorage.getTopFilms(count);
     }
 
     private void isValidReleaseDate(Film film) {
@@ -77,5 +84,4 @@ public class FilmService {
             throw new IllegalArgumentException("Дата выхода фильма должна быть позже 28 декабря 1895 года");
         }
     }
-
 }

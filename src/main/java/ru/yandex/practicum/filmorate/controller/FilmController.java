@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,14 +9,18 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
 
     private final FilmService filmService;
+
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
@@ -38,17 +41,9 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Film> getFilmById(@PathVariable int id) {
-        log.info("Получение фильма с ID: {}", id);
-        return filmService.getFilmById(id)
-                .map(film -> {
-                    log.info("Фильм с ID {} найден", id);
-                    return ResponseEntity.ok(film);
-                })
-                .orElseGet(() -> {
-                    log.warn("Фильм с ID {} не найден", id);
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                });
+    public Film getFilmById(@PathVariable int id) {
+        log.info("Получение фильма с id {}", id);
+        return filmService.getFilmById(id);
     }
 
     @PutMapping("/{filmId}/like/{userId}")
@@ -66,9 +61,8 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<Collection<Film>> getTopFilms(@RequestParam(defaultValue = "10") int count) {
-        log.info("Получение популярных фильмов, количество: {}", count);
-        Collection<Film> popularFilms = filmService.getTopFilms(count);
-        return ResponseEntity.ok(popularFilms);
+    public List<Film> getTopFilms(@RequestParam(defaultValue = "10") int count) {
+        log.info("Получение топ-{} популярных фильмов", count);
+        return filmService.getTopFilms(count);
     }
 }
